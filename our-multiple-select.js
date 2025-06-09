@@ -1,13 +1,17 @@
 class OurMultipleSelect {
     constructor(id) {
+        this.id = id;
         this.elementTarget = document.getElementById(id);
 
         if (!this.elementTarget) {
             throw new Error(`Elemento com ID "${id}" não encontrado.`);
         }
 
-        this.elementTargetOptions = this.elementTarget.options;
+        // Remove instância anterior caso existir
+        const existing = document.getElementById(`multiple-select#${id}`);
+        if (existing) existing.remove();
 
+        this.elementTargetOptions = Array.from(this.elementTarget.options);
         this.init();
     }
 
@@ -17,6 +21,7 @@ class OurMultipleSelect {
 
         this.multipleSelect = document.createElement("div");
         this.multipleSelect.classList.add("multiple-select");
+        this.multipleSelect.setAttribute("id", `multiple-select#${this.id}`);
 
         this.multipleSelectHeader = document.createElement("div");
         this.multipleSelectHeader.classList.add("multiple-select__header");
@@ -31,27 +36,69 @@ class OurMultipleSelect {
         this.createOptions();
 
         this.multipleSelectHeader.addEventListener("click", () => {
-            document.documentElement.style.setProperty("--oms-dropdown-width", `${this.multipleSelect.offsetWidth}px`);
+            // Define a mesma largura do componente para o dropdown
+            const dropdownWidth = this.multipleSelect.offsetWidth;
+            document.documentElement.style.setProperty("--oms-dropdown-width", `${dropdownWidth}px`);
+
+            document.documentElement.style.removeProperty("--oms-dropdown-height");
+            document.documentElement.style.removeProperty("--oms-dropdown-bottom");
+
+            const documentHeight = document.documentElement.scrollHeight;
 
             this.multipleSelect.toggleAttribute("open");
+
+            const dropdownHeight = this.multipleSelectDropdown.offsetHeight;
+            const headerRect = this.multipleSelectHeader.getBoundingClientRect();
+
+            const spaceBelow = documentHeight - headerRect.bottom;
+            const spaceAbove = headerRect.top;
+
+            if (spaceBelow >= dropdownHeight) {
+                // Há espaço suficiente abaixo -> abre abaixo e mantém altura padrão
+                // (Nada precisa ser feito - CSS padrão posiciona abaixo)
+            } else if (spaceAbove >= dropdownHeight) {
+                //  Há espaço suficiente acima -> abre acima e mantém altura padrão
+                document.documentElement.style.setProperty(
+                    "--oms-dropdown-bottom",
+                    `${this.multipleSelectHeader.clientHeight}px`
+                );
+            } else {
+                // Não há espaço suficiente nem abaixo nem acima -> abre onde couber mais e ajusta a altura
+                const openAbove = spaceAbove > spaceBelow;
+                const availableSpace = openAbove ? spaceAbove : spaceBelow;
+
+                document.documentElement.style.setProperty(
+                    "--oms-dropdown-height",
+                    `${availableSpace}px`
+                );
+
+                if (openAbove) {
+                    document.documentElement.style.setProperty(
+                        "--oms-dropdown-bottom",
+                        `${this.multipleSelectHeader.clientHeight}px`
+                    );
+                }
+            }
+        });
+
+        // TODO: adicionar evento para fechar o dropdown ao clicar fora
+        document.addEventListener("click", function (e) {
         });
     }
 
     createOptions() {
-        for (let i = 0; i < this.elementTargetOptions.length; i++) {
-            const option = this.elementTargetOptions[i];
-
+        this.elementTargetOptions.forEach((option, index) => {
             const optionItem = document.createElement("div");
             optionItem.classList.add("oms-option");
 
             const optionCheckbox = document.createElement("input");
-            optionCheckbox.setAttribute("id", `oms-option-${i}`);
-            optionCheckbox.setAttribute("type", "checkbox");
             optionCheckbox.classList.add("oms-option-checkbox");
+            optionCheckbox.setAttribute("id", `oms-option-${index}`);
+            optionCheckbox.setAttribute("type", "checkbox");
 
             const optionLabel = document.createElement("label");
-            optionLabel.setAttribute("for", `oms-option-${i}`);
             optionLabel.classList.add("oms-option-label");
+            optionLabel.setAttribute("for", `oms-option-${index}`);
             optionLabel.textContent = option.text;
 
             optionItem.append(optionCheckbox, optionLabel);
@@ -72,12 +119,6 @@ class OurMultipleSelect {
                     this.multipleSelectHeader.innerHTML = `<span>${arr.join(", ")}</span>`;
                 }
             });
-        }
+        });
     }
 }
-
-// TODO: adicionar evento para fechar o dropdown ao clicar fora
-document.addEventListener("click", function (e) {
-});
-
-const example = new OurMultipleSelect("example");
