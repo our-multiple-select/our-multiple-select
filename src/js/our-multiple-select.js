@@ -122,3 +122,5 @@ class OurMultipleSelect {
         });
     }
 }
+
+const example = new OurMultipleSelect("example");
