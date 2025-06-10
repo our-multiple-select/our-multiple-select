@@ -87,8 +87,10 @@ class OurMultipleSelect {
             }
         });
 
-        // TODO: adicionar evento para fechar o dropdown ao clicar fora
-        document.addEventListener("click", function (e) {
+        document.addEventListener("click", (e) => {
+            if (!this.multipleSelect.contains(e.target) && this.multipleSelect.getAttribute("open") !== null) {
+                this.multipleSelect.removeAttribute("open");
+            }
         });
     }
 
