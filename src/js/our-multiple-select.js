@@ -8,7 +8,7 @@ class OurMultipleSelect {
         }
 
         // Remove instância anterior caso existir
-        const existing = document.getElementById(`multiple-select#${id}`);
+        const existing = document.getElementById(`oms-multiple-select#${id}`);
         if (existing) existing.remove();
 
         this.elementTargetOptions = Array.from(this.elementTarget.options);
@@ -17,17 +17,17 @@ class OurMultipleSelect {
 
     // Método principal que inicializa o componente
     init() {
-        this.elementTarget.classList.add("multiple-select-target");
+        this.elementTarget.classList.add("oms-multiple-select__target");
 
         this.multipleSelect = document.createElement("div");
-        this.multipleSelect.classList.add("multiple-select");
-        this.multipleSelect.setAttribute("id", `multiple-select#${this.id}`);
+        this.multipleSelect.classList.add("oms-multiple-select");
+        this.multipleSelect.setAttribute("id", `oms-multiple-select#${this.id}`);
 
         this.multipleSelectHeader = document.createElement("div");
-        this.multipleSelectHeader.classList.add("multiple-select__header");
+        this.multipleSelectHeader.classList.add("oms-multiple-select__header");
 
         this.multipleSelectDropdown = document.createElement("div");
-        this.multipleSelectDropdown.classList.add("multiple-select__dropdown");
+        this.multipleSelectDropdown.classList.add("oms-multiple-select__dropdown");
 
         this.multipleSelect.append(this.multipleSelectHeader, this.multipleSelectDropdown);
 
@@ -53,14 +53,18 @@ class OurMultipleSelect {
             const spaceBelow = documentHeight - headerRect.bottom;
             const spaceAbove = headerRect.top;
 
-            if (spaceBelow >= dropdownHeight) {
+            const gutterPixels = omsConvertRemToPixels(getComputedStyle(document.documentElement).getPropertyValue("--oms-gutter-0"));
+
+            if (spaceBelow >= dropdownHeight + gutterPixels) {
                 // Há espaço suficiente abaixo -> abre abaixo e mantém altura padrão
                 // (Nada precisa ser feito - CSS padrão posiciona abaixo)
             } else if (spaceAbove >= dropdownHeight) {
                 //  Há espaço suficiente acima -> abre acima e mantém altura padrão
+                const bottom = this.multipleSelectHeader.clientHeight + gutterPixels;
+
                 document.documentElement.style.setProperty(
                     "--oms-dropdown-bottom",
-                    `${this.multipleSelectHeader.clientHeight}px`
+                    `${bottom}px`
                 );
             } else {
                 // Não há espaço suficiente nem abaixo nem acima -> abre onde couber mais e ajusta a altura
@@ -69,13 +73,15 @@ class OurMultipleSelect {
 
                 document.documentElement.style.setProperty(
                     "--oms-dropdown-height",
-                    `${availableSpace}px`
+                    `${availableSpace - (2 * gutterPixels)}px`
                 );
 
                 if (openAbove) {
+                    const bottom = this.multipleSelectHeader.clientHeight - gutterPixels;
+
                     document.documentElement.style.setProperty(
                         "--oms-dropdown-bottom",
-                        `${this.multipleSelectHeader.clientHeight}px`
+                        `${bottom}px`
                     );
                 }
             }
@@ -95,6 +101,7 @@ class OurMultipleSelect {
             optionCheckbox.classList.add("oms-option-checkbox");
             optionCheckbox.setAttribute("id", `oms-option-${index}`);
             optionCheckbox.setAttribute("type", "checkbox");
+            optionCheckbox.setAttribute("value", option.value);
 
             const optionLabel = document.createElement("label");
             optionLabel.classList.add("oms-option-label");
@@ -105,22 +112,47 @@ class OurMultipleSelect {
 
             this.multipleSelectDropdown.append(optionItem);
 
-            optionItem.addEventListener("change", () => {
-                let arr = [];
-
-                this.multipleSelectDropdown.querySelectorAll(".oms-option-checkbox[type=checkbox]:checked")
-                    .forEach((a) => {
-                        arr.push(a.nextElementSibling.textContent);
-                    });
-
-                if (arr.length >= 3) {
-                    this.multipleSelectHeader.innerHTML = `<span>${arr.length} selecionados(as)</span>`;
-                } else {
-                    this.multipleSelectHeader.innerHTML = `<span>${arr.join(", ")}</span>`;
-                }
-            });
+            optionItem.addEventListener("change", () => this.updateHeader());
         });
+
+        this.multipleSelect.options = this.multipleSelect.querySelectorAll("[type=checkbox]");
     }
+
+    updateHeader() {
+        const selected = Array.from(
+            this.multipleSelect.querySelectorAll("[type=checkbox]:checked")
+        ).map((checkbox) => checkbox.nextElementSibling.textContent);
+
+        this.multipleSelectHeader.innerHTML = selected.length >= 3
+            ? `<span>${selected.length} selecionados(as)</span>`
+            : `<span>${selected.join(", ")}</span>`;
+    }
+
+    getValues() {
+        const selected = Array.from(
+            this.multipleSelect.querySelectorAll("[type=checkbox]:checked")
+        ).map((checkbox) => checkbox.value);
+
+        return selected.length ? selected : null;
+    }
+
+    setValues(values) {
+        if (!Array.isArray(values)) return;
+
+        this.multipleSelect.options.forEach((checkbox) => {
+            checkbox.checked = values.includes(checkbox.value);
+        });
+
+        this.updateHeader();
+    }
+
+    clear() {
+        this.setValues([]);
+    }
+}
+
+function omsConvertRemToPixels(rem) {
+    return parseFloat(rem) * parseFloat(getComputedStyle(document.documentElement).fontSize);
 }
 
 const example = new OurMultipleSelect("example");
