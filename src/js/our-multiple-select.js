@@ -11,7 +11,6 @@ class OurMultipleSelect {
         const existing = document.getElementById(`oms-multiple-select#${id}`);
         if (existing) existing.remove();
 
-        this.elementTargetOptions = Array.from(this.elementTarget.options);
         this.init();
     }
 
@@ -22,6 +21,9 @@ class OurMultipleSelect {
         this.multipleSelect = document.createElement("div");
         this.multipleSelect.classList.add("oms-multiple-select");
         this.multipleSelect.setAttribute("id", `oms-multiple-select#${this.id}`);
+
+        // Buscar atributos do elemento-alvo
+        this.checkElementTargetAttributes();
 
         this.multipleSelectHeader = document.createElement("div");
         this.multipleSelectHeader.classList.add("oms-multiple-select__header");
@@ -36,6 +38,8 @@ class OurMultipleSelect {
         this.createOptions();
 
         this.multipleSelectHeader.addEventListener("click", () => {
+            if (this.multipleSelect.dataset.omsEnabled === "false") return;
+
             // Define a mesma largura do componente para o dropdown
             const dropdownWidth = this.multipleSelect.offsetWidth;
             document.documentElement.style.setProperty("--oms-dropdown-width", `${dropdownWidth}px`);
@@ -95,7 +99,7 @@ class OurMultipleSelect {
     }
 
     createOptions() {
-        this.elementTargetOptions.forEach((option, index) => {
+        Array.from(this.elementTarget.options).forEach((option, index) => {
             const optionItem = document.createElement("div");
             optionItem.classList.add("oms-option");
 
@@ -117,7 +121,7 @@ class OurMultipleSelect {
             optionItem.addEventListener("change", () => this.updateHeader());
         });
 
-        this.multipleSelect.options = this.multipleSelect.querySelectorAll("[type=checkbox]");
+        this.options = this.multipleSelect.querySelectorAll("[type=checkbox]");
     }
 
     updateHeader() {
@@ -141,8 +145,8 @@ class OurMultipleSelect {
     setValues(values) {
         if (!Array.isArray(values)) return;
 
-        this.multipleSelect.options.forEach((checkbox) => {
-            checkbox.checked = values.includes(checkbox.value);
+        this.options.forEach((checkbox) => {
+            checkbox.checked = values.some((val) => val == checkbox.value);
         });
 
         this.updateHeader();
@@ -150,6 +154,27 @@ class OurMultipleSelect {
 
     clear() {
         this.setValues([]);
+    }
+
+    enable(value) {
+        if (typeof value !== "boolean") {
+            throw new Error(`O método "enable" espera um valor booleano.`);
+        }
+
+        if (value) {
+            this.elementTarget.removeAttribute("disabled");
+            this.multipleSelect.removeAttribute("data-oms-enabled");
+        } else {
+            this.elementTarget.setAttribute("disabled", "");
+            this.multipleSelect.setAttribute("data-oms-enabled", false);
+        }
+    }
+
+    // TODO: melhorar este bloco de código
+    checkElementTargetAttributes() {
+        if (this.elementTarget.disabled) {
+            this.multipleSelect.dataset.omsEnabled = false;
+        }
     }
 }
 
