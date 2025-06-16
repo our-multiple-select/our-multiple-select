@@ -8,7 +8,7 @@ class OurMultipleSelect {
         }
 
         // Remove instância anterior caso existir
-        const existing = document.getElementById(`oms-multiple-select#${id}`);
+        const existing = document.getElementById(`${id}__multiple-select`);
         if (existing) existing.remove();
 
         this.init();
@@ -20,7 +20,7 @@ class OurMultipleSelect {
 
         this.multipleSelect = document.createElement("div");
         this.multipleSelect.classList.add("oms-multiple-select");
-        this.multipleSelect.setAttribute("id", `oms-multiple-select#${this.id}`);
+        this.multipleSelect.setAttribute("id", `${this.id}__multiple-select`);
 
         // Buscar atributos do elemento-alvo
         this.checkElementTargetAttributes();
@@ -181,5 +181,3 @@ class OurMultipleSelect {
 function omsConvertRemToPixels(rem) {
     return parseFloat(rem) * parseFloat(getComputedStyle(document.documentElement).fontSize);
 }
-
-const example = new OurMultipleSelect("example");
